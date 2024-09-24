@@ -40,7 +40,7 @@ else()
   set(TARGET_BITS "64")
 endif()
 
-if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "arm" 
+if("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "arm"
   OR "${CMAKE_SYSTEM_PROCESSOR}" MATCHES "aarch64"
   OR "${CMAKE_SYSTEM_PROCESSOR}" MATCHES "ARM64")
   if(TARGET_BITS STREQUAL "32")
@@ -121,6 +121,9 @@ option(EXCEPTION_HANDLING "Enable exception handling (only works with Windows as
 option(IPO "Enable interprocedural optimizations" OFF)
 option(FUSE_LD "Linker to use" OFF)
 option(SECURITY_COMPILER_FLAGS "Whether to set security-relevant compiler flags like -D_FORTIFY_SOURCE=2 and -fstack-protector-strong" ON)
+
+set(FETCH_TRACY_GIT_TAG "master" CACHE STRING
+	"Git tag for fetching Tracy client. Match with your server (gui) version")
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
   include(${PROJECT_SOURCE_DIR}/cmake/toolchains/Emscripten.toolchain)
@@ -811,6 +814,24 @@ if(NOT(GTEST_FOUND) AND DOWNLOAD_GTEST)
       set(GTEST_INCLUDE_DIRS)
     endif()
   endif()
+endif()
+
+########################################################################
+# DOWNLOAD TRACY
+########################################################################
+
+if(1)
+	include(FetchContent)
+	message(STATUS "Fetching Tracy (${FETCH_TRACY_GIT_TAG})...")
+	FetchContent_Declare(
+		tracy
+		GIT_REPOSITORY https://github.com/wolfpld/tracy.git
+		GIT_TAG ${FETCH_TRACY_GIT_TAG}
+		GIT_SHALLOW TRUE
+		GIT_PROGRESS TRUE
+	)
+	FetchContent_MakeAvailable(tracy)
+	message(STATUS "Fetching Tracy - done")
 endif()
 
 ########################################################################
@@ -2011,6 +2032,7 @@ set_src(BASE GLOB_RECURSE src/base
   system.cpp
   system.h
   tl/threading.h
+  tracy_wrapper.h
   types.h
   unicode/confusables.cpp
   unicode/confusables.h
@@ -2211,6 +2233,7 @@ set(LIBS
   ${WEBSOCKETS_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${PLATFORM_LIBS}
+  Tracy::TracyClient
   # Add pthreads (on non-Windows) at the end, so that other libraries can depend
   # on it.
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2222,6 +2245,7 @@ target_include_directories(engine-gfx PRIVATE ${PNG_INCLUDE_DIRS})
 add_library(engine-shared EXCLUDE_FROM_ALL OBJECT ${ENGINE_INTERFACE} ${ENGINE_SHARED} ${ENGINE_UUID_SHARED} ${BASE})
 add_library(game-shared EXCLUDE_FROM_ALL OBJECT ${GAME_SHARED} ${GAME_GENERATED_SHARED})
 list(APPEND TARGETS_OWN engine-gfx engine-shared game-shared)
+target_link_libraries(engine-gfx Tracy::TracyClient)
 
 if(DISCORD AND NOT DISCORD_DYNAMIC)
   add_library(discord-shared SHARED IMPORTED)
