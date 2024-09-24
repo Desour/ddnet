@@ -37,6 +37,7 @@
 #include <memory>
 #include <numeric>
 #include <string>
+#include <tracy/Tracy.hpp>
 #include <vector>
 
 using namespace FontIcons;
@@ -449,6 +450,8 @@ void CMenus::OnConfigSave(IConfigManager *pConfigManager)
 
 void CMenus::RenderSettingsTee(CUIRect MainView)
 {
+	ZoneScoped;
+
 	CUIRect TabBar, PlayerTab, DummyTab, ChangeInfo;
 	MainView.HSplitTop(20.0f, &TabBar, &MainView);
 	TabBar.VSplitMid(&TabBar, &ChangeInfo, 20.f);

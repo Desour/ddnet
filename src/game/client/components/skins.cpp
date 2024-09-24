@@ -15,6 +15,7 @@
 
 #include <game/client/gameclient.h>
 #include <game/localization.h>
+#include <tracy/Tracy.hpp>
 
 #include "skins.h"
 
@@ -69,6 +70,8 @@ struct SSkinScanUser
 
 int CSkins::SkinScan(const char *pName, int IsDir, int DirType, void *pUser)
 {
+	ZoneScoped;
+
 	auto *pUserReal = static_cast<SSkinScanUser *>(pUser);
 	CSkins *pSelf = pUserReal->m_pThis;
 
@@ -135,6 +138,8 @@ static void CheckMetrics(CSkin::SSkinMetricVariable &Metrics, const uint8_t *pIm
 
 const CSkin *CSkins::LoadSkin(const char *pName, const char *pPath, int DirType)
 {
+	ZoneScopedN("LoadSkin(outer)");
+
 	CImageInfo Info;
 	if(!LoadSkinPng(Info, pName, pPath, DirType))
 		return nullptr;
@@ -143,6 +148,8 @@ const CSkin *CSkins::LoadSkin(const char *pName, const char *pPath, int DirType)
 
 bool CSkins::LoadSkinPng(CImageInfo &Info, const char *pName, const char *pPath, int DirType)
 {
+	ZoneScoped;
+
 	if(!Graphics()->LoadPng(Info, pPath, DirType))
 	{
 		log_error("skins", "Failed to load skin PNG: %s", pName);
@@ -153,6 +160,10 @@ bool CSkins::LoadSkinPng(CImageInfo &Info, const char *pName, const char *pPath,
 
 const CSkin *CSkins::LoadSkin(const char *pName, CImageInfo &Info)
 {
+	ZoneScoped;
+	// ZoneTextF("pName: %s", pName);
+	ZoneText(pName, str_length(pName));
+
 	if(!Graphics()->CheckImageDivisibility(pName, Info, g_pData->m_aSprites[SPRITE_TEE_BODY].m_pSet->m_Gridx, g_pData->m_aSprites[SPRITE_TEE_BODY].m_pSet->m_Gridy, true))
 	{
 		log_error("skins", "Skin failed image divisibility: %s", pName);
@@ -303,6 +314,8 @@ const CSkin *CSkins::LoadSkin(const char *pName, CImageInfo &Info)
 
 void CSkins::OnInit()
 {
+	ZoneScoped;
+
 	m_aEventSkinPrefix[0] = '\0';
 
 	if(g_Config.m_Events)
@@ -321,6 +334,8 @@ void CSkins::OnInit()
 
 void CSkins::Refresh(TSkinLoadedCBFunc &&SkinLoadedFunc)
 {
+	ZoneScoped;
+
 	for(const auto &[_, pSkin] : m_Skins)
 	{
 		pSkin->m_OriginalSkin.Unload(Graphics());

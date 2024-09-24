@@ -78,6 +78,9 @@
 #include <thread>
 #include <tuple>
 
+#include "tracy/Tracy.hpp"
+#include "base/tracy_wrapper.h"
+
 using namespace std::chrono_literals;
 
 static const ColorRGBA gs_ClientNetworkPrintColor{0.7f, 1, 0.7f, 1.0f};
@@ -1004,6 +1007,8 @@ const char *CClient::ErrorString() const
 
 void CClient::Render()
 {
+	ZoneScoped;
+
 	if(g_Config.m_ClOverlayEntities)
 	{
 		ColorRGBA bg = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClBackgroundEntitiesColor));
@@ -2455,6 +2460,8 @@ int CClient::ConnectNetTypes() const
 
 void CClient::PumpNetwork()
 {
+	ZoneScoped;
+
 	for(auto &NetClient : m_aNetClient)
 	{
 		NetClient.Update();
@@ -2592,6 +2599,8 @@ void CClient::UpdateDemoIntraTimers()
 
 void CClient::Update()
 {
+	ZoneScoped;
+
 	PumpNetwork();
 
 	if(State() == IClient::STATE_DEMOPLAYBACK)
@@ -2938,6 +2947,8 @@ void CClient::InitInterfaces()
 
 void CClient::Run()
 {
+	ZoneScoped;
+
 	m_LocalStartTime = m_GlobalStartTime = time_get();
 #if defined(CONF_VIDEORECORDER)
 	IVideo::SetLocalStartTime(m_LocalStartTime);
@@ -3067,6 +3078,8 @@ void CClient::Run()
 	auto LastTime = time_get_nanoseconds();
 	int64_t LastRenderTime = time_get();
 
+	auto Framemarker = FrameMarker("CClient::Run()").started();
+
 	while(true)
 	{
 		set_new_tick();
@@ -3152,6 +3165,8 @@ void CClient::Run()
 
 		// render
 		{
+			ZoneScopedN("Run():render");
+
 			if(g_Config.m_ClEditor)
 			{
 				if(!m_EditorActive)
@@ -3241,6 +3256,8 @@ void CClient::Run()
 		if(State() == IClient::STATE_QUITTING || State() == IClient::STATE_RESTARTING)
 			break;
 
+		Framemarker.end();
+
 		// beNice
 		auto Now = time_get_nanoseconds();
 		decltype(Now) SleepTimeInNanoSeconds{0};
@@ -3283,10 +3300,14 @@ void CClient::Run()
 		else
 			LastTime = Now;
 
+		Framemarker.start();
+
 		// update local and global time
 		m_LocalTime = (time_get() - m_LocalStartTime) / (float)time_freq();
 		m_GlobalTime = (time_get() - m_GlobalStartTime) / (float)time_freq();
 	}
+
+	Framemarker.end();
 
 	GameClient()->RenderShutdownMessage();
 	Disconnect();

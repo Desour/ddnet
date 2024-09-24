@@ -40,6 +40,7 @@
 
 #include <game/generated/protocol7.h>
 #include <game/generated/protocolglue.h>
+#include <tracy/Tracy.hpp>
 
 #include "components/background.h"
 #include "components/binds.h"
@@ -725,6 +726,8 @@ void CGameClient::UpdatePositions()
 
 void CGameClient::OnRender()
 {
+	ZoneScoped;
+
 	// check if multi view got activated
 	if(!m_MultiView.m_IsInit && m_MultiViewActivated)
 	{
@@ -3739,6 +3742,8 @@ void CGameClient::LoadExtrasSkin(const char *pPath, bool AsDir)
 
 void CGameClient::RefreshSkins()
 {
+	ZoneScoped;
+
 	const auto SkinStartLoadTime = time_get_nanoseconds();
 	m_Skins.Refresh([&](int) {
 		// if skin refreshing takes to long, swap to a loading screen
@@ -3768,6 +3773,8 @@ void CGameClient::RefreshSkins()
 
 void CGameClient::ConchainRefreshSkins(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
 {
+	ZoneScoped;
+
 	CGameClient *pThis = static_cast<CGameClient *>(pUserData);
 	pfnCallback(pResult, pCallbackUserData);
 	if(pResult->NumArguments() && pThis->m_Menus.IsInit())

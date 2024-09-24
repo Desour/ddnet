@@ -2,9 +2,12 @@
 
 #include <base/math.h>
 #include <base/system.h>
+#include "tracy/Tracy.hpp"
 
 bool ConvertToRgba(uint8_t *pDest, const CImageInfo &SourceImage)
 {
+	ZoneScoped;
+
 	if(SourceImage.m_Format == CImageInfo::FORMAT_RGBA)
 	{
 		mem_copy(pDest, SourceImage.m_pData, SourceImage.DataSize());
@@ -57,6 +60,8 @@ bool ConvertToRgbaAlloc(uint8_t *&pDest, const CImageInfo &SourceImage)
 
 bool ConvertToRgba(CImageInfo &Image)
 {
+	ZoneScoped;
+
 	if(Image.m_Format == CImageInfo::FORMAT_RGBA)
 		return true;
 
@@ -70,6 +75,8 @@ bool ConvertToRgba(CImageInfo &Image)
 
 void ConvertToGrayscale(const CImageInfo &Image)
 {
+	ZoneScoped;
+
 	if(Image.m_Format == CImageInfo::FORMAT_R || Image.m_Format == CImageInfo::FORMAT_RA)
 		return;
 
@@ -248,6 +255,8 @@ static void SampleBicubic(const uint8_t *pSourceImage, float u, float v, uint32_
 
 static void ResizeImage(const uint8_t *pSourceImage, uint32_t SW, uint32_t SH, uint8_t *pDestinationImage, uint32_t W, uint32_t H, size_t BPP)
 {
+	ZoneScoped;
+
 	for(int y = 0; y < (int)H; ++y)
 	{
 		float v = (float)y / (float)(H - 1);
@@ -263,6 +272,8 @@ static void ResizeImage(const uint8_t *pSourceImage, uint32_t SW, uint32_t SH, u
 
 uint8_t *ResizeImage(const uint8_t *pImageData, int Width, int Height, int NewWidth, int NewHeight, int BPP)
 {
+	ZoneScoped;
+
 	uint8_t *pTmpData = (uint8_t *)malloc((size_t)NewWidth * NewHeight * BPP);
 	ResizeImage(pImageData, Width, Height, pTmpData, NewWidth, NewHeight, BPP);
 	return pTmpData;
@@ -270,6 +281,8 @@ uint8_t *ResizeImage(const uint8_t *pImageData, int Width, int Height, int NewWi
 
 void ResizeImage(CImageInfo &Image, int NewWidth, int NewHeight)
 {
+	ZoneScoped;
+
 	uint8_t *pNewData = ResizeImage(Image.m_pData, Image.m_Width, Image.m_Height, NewWidth, NewHeight, Image.PixelSize());
 	free(Image.m_pData);
 	Image.m_pData = pNewData;

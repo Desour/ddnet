@@ -6,6 +6,7 @@
 
 #include <base/detect.h>
 #include <base/system.h>
+#include <tracy/Tracy.hpp>
 
 #if defined(BACKEND_AS_OPENGL_ES) || !defined(CONF_BACKEND_OPENGL_ES)
 
@@ -35,6 +36,8 @@
 // ------------ CCommandProcessorFragment_OpenGL
 void CCommandProcessorFragment_OpenGL::Cmd_Update_Viewport(const CCommandBuffer::SCommand_Update_Viewport *pCommand)
 {
+	ZoneScoped;
+
 	if(pCommand->m_ByResize)
 	{
 		m_CanvasWidth = (uint32_t)pCommand->m_Width;
@@ -581,6 +584,8 @@ bool CCommandProcessorFragment_OpenGL::InitOpenGL(const SCommand_Init *pCommand)
 
 bool CCommandProcessorFragment_OpenGL::Cmd_Init(const SCommand_Init *pCommand)
 {
+	ZoneScoped;
+
 	if(!InitOpenGL(pCommand))
 		return false;
 
@@ -691,6 +696,8 @@ void CCommandProcessorFragment_OpenGL::DestroyTexture(int Slot)
 
 void CCommandProcessorFragment_OpenGL::Cmd_Texture_Destroy(const CCommandBuffer::SCommand_Texture_Destroy *pCommand)
 {
+	ZoneScoped;
+
 	DestroyTexture(pCommand->m_Slot);
 }
 
@@ -904,28 +911,38 @@ void CCommandProcessorFragment_OpenGL::TextureCreate(int Slot, int Width, int He
 
 void CCommandProcessorFragment_OpenGL::Cmd_Texture_Create(const CCommandBuffer::SCommand_Texture_Create *pCommand)
 {
+	ZoneScoped;
+
 	TextureCreate(pCommand->m_Slot, pCommand->m_Width, pCommand->m_Height, GL_RGBA, GL_RGBA, pCommand->m_Flags, pCommand->m_pData);
 }
 
 void CCommandProcessorFragment_OpenGL::Cmd_TextTexture_Update(const CCommandBuffer::SCommand_TextTexture_Update *pCommand)
 {
+	ZoneScoped;
+
 	TextureUpdate(pCommand->m_Slot, pCommand->m_X, pCommand->m_Y, pCommand->m_Width, pCommand->m_Height, GL_ALPHA, pCommand->m_pData);
 }
 
 void CCommandProcessorFragment_OpenGL::Cmd_TextTextures_Destroy(const CCommandBuffer::SCommand_TextTextures_Destroy *pCommand)
 {
+	ZoneScoped;
+
 	DestroyTexture(pCommand->m_Slot);
 	DestroyTexture(pCommand->m_SlotOutline);
 }
 
 void CCommandProcessorFragment_OpenGL::Cmd_TextTextures_Create(const CCommandBuffer::SCommand_TextTextures_Create *pCommand)
 {
+	ZoneScoped;
+
 	TextureCreate(pCommand->m_Slot, pCommand->m_Width, pCommand->m_Height, GL_ALPHA, GL_ALPHA, CCommandBuffer::TEXFLAG_NOMIPMAPS, pCommand->m_pTextData);
 	TextureCreate(pCommand->m_SlotOutline, pCommand->m_Width, pCommand->m_Height, GL_ALPHA, GL_ALPHA, CCommandBuffer::TEXFLAG_NOMIPMAPS, pCommand->m_pTextOutlineData);
 }
 
 void CCommandProcessorFragment_OpenGL::Cmd_Clear(const CCommandBuffer::SCommand_Clear *pCommand)
 {
+	ZoneScoped;
+
 	// if clip is still active, force disable it for clearing, enable it again afterwards
 	bool ClipWasEnabled = m_LastClipEnable;
 	if(ClipWasEnabled)
@@ -942,6 +959,8 @@ void CCommandProcessorFragment_OpenGL::Cmd_Clear(const CCommandBuffer::SCommand_
 
 void CCommandProcessorFragment_OpenGL::Cmd_Render(const CCommandBuffer::SCommand_Render *pCommand)
 {
+	ZoneScoped;
+
 #ifndef BACKEND_GL_MODERN_API
 	SetState(pCommand->m_State);
 
@@ -973,6 +992,8 @@ void CCommandProcessorFragment_OpenGL::Cmd_Render(const CCommandBuffer::SCommand
 
 void CCommandProcessorFragment_OpenGL::Cmd_ReadPixel(const CCommandBuffer::SCommand_TrySwapAndReadPixel *pCommand)
 {
+	ZoneScoped;
+
 	// get size of viewport
 	GLint aViewport[4] = {0, 0, 0, 0};
 	glGetIntegerv(GL_VIEWPORT, aViewport);
@@ -992,6 +1013,8 @@ void CCommandProcessorFragment_OpenGL::Cmd_ReadPixel(const CCommandBuffer::SComm
 
 void CCommandProcessorFragment_OpenGL::Cmd_Screenshot(const CCommandBuffer::SCommand_TrySwapAndScreenshot *pCommand)
 {
+	ZoneScoped;
+
 	// fetch image data
 	GLint aViewport[4] = {0, 0, 0, 0};
 	glGetIntegerv(GL_VIEWPORT, aViewport);
@@ -1038,6 +1061,9 @@ CCommandProcessorFragment_OpenGL::CCommandProcessorFragment_OpenGL()
 
 ERunCommandReturnTypes CCommandProcessorFragment_OpenGL::RunCommand(const CCommandBuffer::SCommand *pBaseCommand)
 {
+	ZoneScoped;
+	ZoneValue(pBaseCommand->m_Cmd);
+
 	switch(pBaseCommand->m_Cmd)
 	{
 	case CCommandProcessorFragment_OpenGL::CMD_INIT:

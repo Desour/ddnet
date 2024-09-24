@@ -1,6 +1,7 @@
 #include "backend_opengl3.h"
 
 #include <base/detect.h>
+#include <tracy/Tracy.hpp>
 
 #if defined(BACKEND_AS_OPENGL_ES) || !defined(CONF_BACKEND_OPENGL_ES)
 
@@ -72,6 +73,8 @@ void CCommandProcessorFragment_OpenGL3_3::InitPrimExProgram(CGLSLPrimitiveExProg
 
 bool CCommandProcessorFragment_OpenGL3_3::Cmd_Init(const SCommand_Init *pCommand)
 {
+	ZoneScoped;
+
 	if(!InitOpenGL(pCommand))
 		return false;
 
@@ -424,6 +427,8 @@ bool CCommandProcessorFragment_OpenGL3_3::Cmd_Init(const SCommand_Init *pCommand
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_Shutdown(const SCommand_Shutdown *pCommand)
 {
+	ZoneScoped;
+
 	glUseProgram(0);
 
 	m_pPrimitiveProgram->DeleteProgram();
@@ -483,6 +488,8 @@ void CCommandProcessorFragment_OpenGL3_3::Cmd_Shutdown(const SCommand_Shutdown *
 
 void CCommandProcessorFragment_OpenGL3_3::TextureUpdate(int Slot, int X, int Y, int Width, int Height, int GLFormat, uint8_t *pTexData)
 {
+	ZoneScoped;
+
 	glBindTexture(GL_TEXTURE_2D, m_vTextures[Slot].m_Tex);
 
 	if(m_vTextures[Slot].m_RescaleCount > 0)
@@ -507,6 +514,8 @@ void CCommandProcessorFragment_OpenGL3_3::TextureUpdate(int Slot, int X, int Y, 
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_Texture_Destroy(const CCommandBuffer::SCommand_Texture_Destroy *pCommand)
 {
+	ZoneScoped;
+
 	int Slot = 0;
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindSampler(Slot, 0);
@@ -515,6 +524,10 @@ void CCommandProcessorFragment_OpenGL3_3::Cmd_Texture_Destroy(const CCommandBuff
 
 void CCommandProcessorFragment_OpenGL3_3::TextureCreate(int Slot, int Width, int Height, int GLFormat, int GLStoreFormat, int Flags, uint8_t *pTexData)
 {
+	ZoneScoped;
+	ZoneValue(Width);
+	ZoneValue(Height);
+
 	while(Slot >= (int)m_vTextures.size())
 		m_vTextures.resize(m_vTextures.size() * 2);
 
@@ -563,7 +576,10 @@ void CCommandProcessorFragment_OpenGL3_3::TextureCreate(int Slot, int Width, int
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glSamplerParameteri(m_vTextures[Slot].m_Sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			glSamplerParameteri(m_vTextures[Slot].m_Sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTexImage2D(GL_TEXTURE_2D, 0, GLStoreFormat, Width, Height, 0, GLFormat, GL_UNSIGNED_BYTE, pTexData);
+			{
+				ZoneScopedN("glTexImage2D");
+				glTexImage2D(GL_TEXTURE_2D, 0, GLStoreFormat, Width, Height, 0, GLFormat, GL_UNSIGNED_BYTE, pTexData);
+			}
 		}
 	}
 	else
@@ -584,8 +600,14 @@ void CCommandProcessorFragment_OpenGL3_3::TextureCreate(int Slot, int Width, int
 				glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 5.f);
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, 5);
 			}
-			glTexImage2D(GL_TEXTURE_2D, 0, GLStoreFormat, Width, Height, 0, GLFormat, GL_UNSIGNED_BYTE, pTexData);
-			glGenerateMipmap(GL_TEXTURE_2D);
+			{
+				ZoneScopedN("glTexImage2D");
+				glTexImage2D(GL_TEXTURE_2D, 0, GLStoreFormat, Width, Height, 0, GLFormat, GL_UNSIGNED_BYTE, pTexData);
+			}
+			{
+				ZoneScopedN("glGenerateMipmap");
+				glGenerateMipmap(GL_TEXTURE_2D);
+			}
 		}
 
 		if((Flags & (CCommandBuffer::TEXFLAG_TO_2D_ARRAY_TEXTURE)) != 0)
@@ -628,8 +650,14 @@ void CCommandProcessorFragment_OpenGL3_3::TextureCreate(int Slot, int Width, int
 
 			if(Texture2DTo3D(pTexData, ConvertWidth, ConvertHeight, PixelSize, 16, 16, p3DImageData, Image3DWidth, Image3DHeight))
 			{
-				glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GLStoreFormat, Image3DWidth, Image3DHeight, 256, 0, GLFormat, GL_UNSIGNED_BYTE, p3DImageData);
-				glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+				{
+					ZoneScopedN("glTexImage3D");
+					glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GLStoreFormat, Image3DWidth, Image3DHeight, 256, 0, GLFormat, GL_UNSIGNED_BYTE, p3DImageData);
+				}
+				{
+					ZoneScopedN("glGenerateMipmap");
+					glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+				}
 			}
 
 			free(p3DImageData);
@@ -654,28 +682,38 @@ void CCommandProcessorFragment_OpenGL3_3::TextureCreate(int Slot, int Width, int
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_Texture_Create(const CCommandBuffer::SCommand_Texture_Create *pCommand)
 {
+	ZoneScoped;
+
 	TextureCreate(pCommand->m_Slot, pCommand->m_Width, pCommand->m_Height, GL_RGBA, GL_RGBA, pCommand->m_Flags, pCommand->m_pData);
 }
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_TextTexture_Update(const CCommandBuffer::SCommand_TextTexture_Update *pCommand)
 {
+	ZoneScoped;
+
 	TextureUpdate(pCommand->m_Slot, pCommand->m_X, pCommand->m_Y, pCommand->m_Width, pCommand->m_Height, GL_RED, pCommand->m_pData);
 }
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_TextTextures_Destroy(const CCommandBuffer::SCommand_TextTextures_Destroy *pCommand)
 {
+	ZoneScoped;
+
 	DestroyTexture(pCommand->m_Slot);
 	DestroyTexture(pCommand->m_SlotOutline);
 }
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_TextTextures_Create(const CCommandBuffer::SCommand_TextTextures_Create *pCommand)
 {
+	ZoneScoped;
+
 	TextureCreate(pCommand->m_Slot, pCommand->m_Width, pCommand->m_Height, GL_RED, GL_RED, CCommandBuffer::TEXFLAG_NOMIPMAPS, pCommand->m_pTextData);
 	TextureCreate(pCommand->m_SlotOutline, pCommand->m_Width, pCommand->m_Height, GL_RED, GL_RED, CCommandBuffer::TEXFLAG_NOMIPMAPS, pCommand->m_pTextOutlineData);
 }
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_Clear(const CCommandBuffer::SCommand_Clear *pCommand)
 {
+	ZoneScoped;
+
 	// if clip is still active, force disable it for clearing, enable it again afterwards
 	bool ClipWasEnabled = m_LastClipEnable;
 	if(ClipWasEnabled)
@@ -696,6 +734,8 @@ void CCommandProcessorFragment_OpenGL3_3::Cmd_Clear(const CCommandBuffer::SComma
 
 void CCommandProcessorFragment_OpenGL3_3::UploadStreamBufferData(unsigned int PrimitiveType, const void *pVertices, size_t VertSize, unsigned int PrimitiveCount, bool AsTex3D)
 {
+	ZoneScoped;
+
 	int Count = 0;
 	switch(PrimitiveType)
 	{
@@ -722,6 +762,8 @@ void CCommandProcessorFragment_OpenGL3_3::UploadStreamBufferData(unsigned int Pr
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_Render(const CCommandBuffer::SCommand_Render *pCommand)
 {
+	ZoneScoped;
+
 	CGLSLTWProgram *pProgram = m_pPrimitiveProgram;
 	if(IsTexturedState(pCommand->m_State))
 		pProgram = m_pPrimitiveProgramTextured;
@@ -758,6 +800,8 @@ void CCommandProcessorFragment_OpenGL3_3::Cmd_Render(const CCommandBuffer::SComm
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_RenderTex3D(const CCommandBuffer::SCommand_RenderTex3D *pCommand)
 {
+	ZoneScoped;
+
 	CGLSLPrimitiveProgram *pProg = m_pPrimitive3DProgram;
 	if(IsTexturedState(pCommand->m_State))
 		pProg = m_pPrimitive3DProgramTextured;
@@ -785,6 +829,8 @@ void CCommandProcessorFragment_OpenGL3_3::Cmd_RenderTex3D(const CCommandBuffer::
 
 void CCommandProcessorFragment_OpenGL3_3::DestroyBufferContainer(int Index, bool DeleteBOs)
 {
+	ZoneScoped;
+
 	SBufferContainer &BufferContainer = m_vBufferContainers[Index];
 	if(BufferContainer.m_VertArrayId != 0)
 		glDeleteVertexArrays(1, &BufferContainer.m_VertArrayId);
@@ -805,6 +851,8 @@ void CCommandProcessorFragment_OpenGL3_3::DestroyBufferContainer(int Index, bool
 
 void CCommandProcessorFragment_OpenGL3_3::AppendIndices(unsigned int NewIndicesCount)
 {
+	ZoneScoped;
+
 	if(NewIndicesCount <= m_CurrentIndicesInBuffer)
 		return;
 	unsigned int AddCount = NewIndicesCount - m_CurrentIndicesInBuffer;
@@ -848,11 +896,16 @@ void CCommandProcessorFragment_OpenGL3_3::AppendIndices(unsigned int NewIndicesC
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_CreateBufferObject(const CCommandBuffer::SCommand_CreateBufferObject *pCommand)
 {
+	ZoneScoped;
+
 	void *pUploadData = pCommand->m_pUploadData;
 	int Index = pCommand->m_BufferIndex;
 	// create necessary space
 	if((size_t)Index >= m_vBufferObjectIndices.size())
 	{
+		ZoneScopedN("push_back loop");
+		ZoneValue((size_t)Index - m_vBufferObjectIndices.size());
+
 		for(int i = m_vBufferObjectIndices.size(); i < Index + 1; ++i)
 		{
 			m_vBufferObjectIndices.push_back(0);
@@ -861,9 +914,14 @@ void CCommandProcessorFragment_OpenGL3_3::Cmd_CreateBufferObject(const CCommandB
 
 	GLuint VertBufferId = 0;
 
-	glGenBuffers(1, &VertBufferId);
-	glBindBuffer(BUFFER_INIT_VERTEX_TARGET, VertBufferId);
-	glBufferData(BUFFER_INIT_VERTEX_TARGET, (GLsizeiptr)(pCommand->m_DataSize), pUploadData, GL_STATIC_DRAW);
+	{
+		ZoneScopedN("gl calls");
+		ZoneValue(pCommand->m_DataSize);
+
+		glGenBuffers(1, &VertBufferId);
+		glBindBuffer(BUFFER_INIT_VERTEX_TARGET, VertBufferId);
+		glBufferData(BUFFER_INIT_VERTEX_TARGET, (GLsizeiptr)(pCommand->m_DataSize), pUploadData, GL_STATIC_DRAW);
+	}
 
 	m_vBufferObjectIndices[Index] = VertBufferId;
 
@@ -873,6 +931,8 @@ void CCommandProcessorFragment_OpenGL3_3::Cmd_CreateBufferObject(const CCommandB
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_RecreateBufferObject(const CCommandBuffer::SCommand_RecreateBufferObject *pCommand)
 {
+	ZoneScoped;
+
 	void *pUploadData = pCommand->m_pUploadData;
 	int Index = pCommand->m_BufferIndex;
 
@@ -885,6 +945,8 @@ void CCommandProcessorFragment_OpenGL3_3::Cmd_RecreateBufferObject(const CComman
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_UpdateBufferObject(const CCommandBuffer::SCommand_UpdateBufferObject *pCommand)
 {
+	ZoneScoped;
+
 	void *pUploadData = pCommand->m_pUploadData;
 	int Index = pCommand->m_BufferIndex;
 
@@ -897,6 +959,8 @@ void CCommandProcessorFragment_OpenGL3_3::Cmd_UpdateBufferObject(const CCommandB
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_CopyBufferObject(const CCommandBuffer::SCommand_CopyBufferObject *pCommand)
 {
+	ZoneScoped;
+
 	int WriteIndex = pCommand->m_WriteBufferIndex;
 	int ReadIndex = pCommand->m_ReadBufferIndex;
 
@@ -907,6 +971,8 @@ void CCommandProcessorFragment_OpenGL3_3::Cmd_CopyBufferObject(const CCommandBuf
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_DeleteBufferObject(const CCommandBuffer::SCommand_DeleteBufferObject *pCommand)
 {
+	ZoneScoped;
+
 	int Index = pCommand->m_BufferIndex;
 
 	glDeleteBuffers(1, &m_vBufferObjectIndices[Index]);
@@ -914,6 +980,8 @@ void CCommandProcessorFragment_OpenGL3_3::Cmd_DeleteBufferObject(const CCommandB
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_CreateBufferContainer(const CCommandBuffer::SCommand_CreateBufferContainer *pCommand)
 {
+	ZoneScoped;
+
 	int Index = pCommand->m_BufferContainerIndex;
 	// create necessary space
 	if((size_t)Index >= m_vBufferContainers.size())
@@ -955,6 +1023,8 @@ void CCommandProcessorFragment_OpenGL3_3::Cmd_CreateBufferContainer(const CComma
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_UpdateBufferContainer(const CCommandBuffer::SCommand_UpdateBufferContainer *pCommand)
 {
+	ZoneScoped;
+
 	SBufferContainer &BufferContainer = m_vBufferContainers[pCommand->m_BufferContainerIndex];
 
 	glBindVertexArray(BufferContainer.m_VertArrayId);
@@ -986,17 +1056,23 @@ void CCommandProcessorFragment_OpenGL3_3::Cmd_UpdateBufferContainer(const CComma
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_DeleteBufferContainer(const CCommandBuffer::SCommand_DeleteBufferContainer *pCommand)
 {
+	ZoneScoped;
+
 	DestroyBufferContainer(pCommand->m_BufferContainerIndex, pCommand->m_DestroyAllBO);
 }
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_IndicesRequiredNumNotify(const CCommandBuffer::SCommand_IndicesRequiredNumNotify *pCommand)
 {
+	ZoneScoped;
+
 	if(pCommand->m_RequiredIndicesNum > m_CurrentIndicesInBuffer)
 		AppendIndices(pCommand->m_RequiredIndicesNum);
 }
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_RenderBorderTile(const CCommandBuffer::SCommand_RenderBorderTile *pCommand)
 {
+	ZoneScoped;
+
 	int Index = pCommand->m_BufferContainerIndex;
 	// if space not there return
 	if((size_t)Index >= m_vBufferContainers.size())
@@ -1030,6 +1106,8 @@ void CCommandProcessorFragment_OpenGL3_3::Cmd_RenderBorderTile(const CCommandBuf
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_RenderTileLayer(const CCommandBuffer::SCommand_RenderTileLayer *pCommand)
 {
+	ZoneScoped;
+
 	int Index = pCommand->m_BufferContainerIndex;
 	// if space not there return
 	if((size_t)Index >= m_vBufferContainers.size())
@@ -1071,6 +1149,8 @@ void CCommandProcessorFragment_OpenGL3_3::Cmd_RenderTileLayer(const CCommandBuff
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_RenderQuadLayer(const CCommandBuffer::SCommand_RenderQuadLayer *pCommand)
 {
+	ZoneScoped;
+
 	int Index = pCommand->m_BufferContainerIndex;
 	// if space not there return
 	if((size_t)Index >= m_vBufferContainers.size())
@@ -1136,6 +1216,8 @@ void CCommandProcessorFragment_OpenGL3_3::Cmd_RenderQuadLayer(const CCommandBuff
 
 void CCommandProcessorFragment_OpenGL3_3::RenderText(const CCommandBuffer::SState &State, int DrawNum, int TextTextureIndex, int TextOutlineTextureIndex, int TextureSize, const ColorRGBA &TextColor, const ColorRGBA &TextOutlineColor)
 {
+	ZoneScoped;
+
 	if(DrawNum == 0)
 	{
 		return; // nothing to draw
@@ -1189,6 +1271,8 @@ void CCommandProcessorFragment_OpenGL3_3::RenderText(const CCommandBuffer::SStat
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_RenderText(const CCommandBuffer::SCommand_RenderText *pCommand)
 {
+	ZoneScoped;
+
 	int Index = pCommand->m_BufferContainerIndex;
 	// if space not there return
 	if((size_t)Index >= m_vBufferContainers.size())
@@ -1210,6 +1294,8 @@ void CCommandProcessorFragment_OpenGL3_3::Cmd_RenderText(const CCommandBuffer::S
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_RenderQuadContainer(const CCommandBuffer::SCommand_RenderQuadContainer *pCommand)
 {
+	ZoneScoped;
+
 	if(pCommand->m_DrawNum == 0)
 	{
 		return; // nothing to draw
@@ -1242,6 +1328,8 @@ void CCommandProcessorFragment_OpenGL3_3::Cmd_RenderQuadContainer(const CCommand
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_RenderQuadContainerEx(const CCommandBuffer::SCommand_RenderQuadContainerEx *pCommand)
 {
+	ZoneScoped;
+
 	if(pCommand->m_DrawNum == 0)
 	{
 		return; // nothing to draw
@@ -1303,6 +1391,8 @@ void CCommandProcessorFragment_OpenGL3_3::Cmd_RenderQuadContainerEx(const CComma
 
 void CCommandProcessorFragment_OpenGL3_3::Cmd_RenderQuadContainerAsSpriteMultiple(const CCommandBuffer::SCommand_RenderQuadContainerAsSpriteMultiple *pCommand)
 {
+	ZoneScoped;
+
 	if(pCommand->m_DrawNum == 0 || pCommand->m_DrawCount == 0)
 	{
 		return; // nothing to draw

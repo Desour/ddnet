@@ -16,6 +16,7 @@
 
 #include <game/client/gameclient.h>
 #include <game/localization.h>
+#include <tracy/Tracy.hpp>
 
 #include "menus.h"
 #include "skins7.h"
@@ -36,6 +37,8 @@ int unsigned *CSkins7::ms_apColorVariables[NUM_DUMMIES][protocol7::NUM_SKINPARTS
 
 int CSkins7::SkinPartScan(const char *pName, int IsDir, int DirType, void *pUser)
 {
+	ZoneScoped;
+
 	CSkins7 *pSelf = (CSkins7 *)pUser;
 	if(IsDir || !str_endswith(pName, ".png"))
 		return 0;

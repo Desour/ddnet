@@ -1,9 +1,12 @@
 #include "backend_null.h"
 
 #include <engine/client/backend_sdl.h>
+#include <tracy/Tracy.hpp>
 
 ERunCommandReturnTypes CCommandProcessorFragment_Null::RunCommand(const CCommandBuffer::SCommand *pBaseCommand)
 {
+	ZoneScoped;
+
 	switch(pBaseCommand->m_Cmd)
 	{
 	case CCommandProcessorFragment_Null::CMD_INIT:

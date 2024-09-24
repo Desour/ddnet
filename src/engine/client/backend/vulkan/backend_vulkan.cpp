@@ -1,3 +1,4 @@
+#include <tracy/Tracy.hpp>
 #if defined(CONF_BACKEND_VULKAN)
 
 #include <engine/client/backend/vulkan/backend_vulkan.h>
@@ -6433,6 +6434,8 @@ public:
 
 	[[nodiscard]] ERunCommandReturnTypes RunCommand(const CCommandBuffer::SCommand *pBaseCommand) override
 	{
+		ZoneScoped;
+
 		if(m_HasError)
 		{
 			// ignore all further commands

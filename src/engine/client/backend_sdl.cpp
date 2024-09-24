@@ -1,4 +1,6 @@
+#include "base/tracy_wrapper.h"
 #include <base/detect.h>
+#include <tracy/Tracy.hpp>
 
 #ifndef CONF_BACKEND_OPENGL_ES
 #include <GL/glew.h>
@@ -47,6 +49,8 @@ class IStorage;
 
 void CGraphicsBackend_Threaded::ThreadFunc(void *pUser)
 {
+	ZoneScoped;
+
 	auto *pSelf = (CGraphicsBackend_Threaded *)pUser;
 	std::unique_lock<std::mutex> Lock(pSelf->m_BufferSwapMutex);
 	// notify, that the thread started
@@ -57,6 +61,8 @@ void CGraphicsBackend_Threaded::ThreadFunc(void *pUser)
 		pSelf->m_BufferSwapCond.wait(Lock, [&pSelf] { return pSelf->m_pBuffer != nullptr || pSelf->m_Shutdown; });
 		if(pSelf->m_pBuffer)
 		{
+			auto Framemarker = FrameMarker("CGraphicsBackend_Threaded::ThreadFunc()").started();
+
 #ifdef CONF_PLATFORM_MACOS
 			CAutoreleasePool AutoreleasePool;
 #endif
@@ -187,6 +193,8 @@ void CCommandProcessorFragment_General::Cmd_Signal(const CCommandBuffer::SComman
 
 bool CCommandProcessorFragment_General::RunCommand(const CCommandBuffer::SCommand *pBaseCommand)
 {
+	ZoneScoped;
+
 	switch(pBaseCommand->m_Cmd)
 	{
 	case CCommandBuffer::CMD_NOP: break;
@@ -250,6 +258,8 @@ CCommandProcessorFragment_SDL::CCommandProcessorFragment_SDL() = default;
 
 bool CCommandProcessorFragment_SDL::RunCommand(const CCommandBuffer::SCommand *pBaseCommand)
 {
+	ZoneScoped;
+
 	switch(pBaseCommand->m_Cmd)
 	{
 	case CCommandBuffer::CMD_WINDOW_CREATE_NTF: Cmd_WindowCreateNtf(static_cast<const CCommandBuffer::SCommand_WindowCreateNtf *>(pBaseCommand)); break;
@@ -327,10 +337,14 @@ void CCommandProcessor_SDL_GL::HandleWarning()
 
 void CCommandProcessor_SDL_GL::RunBuffer(CCommandBuffer *pBuffer)
 {
+	ZoneScoped;
+
 	m_pGLBackend->StartCommands(pBuffer->m_CommandCount, pBuffer->m_RenderCallCount);
 
 	for(CCommandBuffer::SCommand *pCommand = pBuffer->Head(); pCommand; pCommand = pCommand->m_pNext)
 	{
+		ZoneScopedN("one command");
+
 		auto Res = m_pGLBackend->RunCommand(pCommand);
 		if(Res == ERunCommandReturnTypes::RUN_COMMAND_COMMAND_HANDLED)
 		{
