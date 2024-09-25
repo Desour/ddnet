@@ -1605,6 +1605,8 @@ protected:
 		bool RequiresMapping>
 	[[nodiscard]] bool GetBufferBlockImpl(SMemoryBlock<Id> &RetBlock, SMemoryBlockCache<Id> &MemoryCache, VkBufferUsageFlags BufferUsage, VkMemoryPropertyFlags BufferProperties, const void *pBufferData, VkDeviceSize RequiredSize, VkDeviceSize TargetAlignment)
 	{
+		ZoneScoped;
+
 		bool Res = true;
 
 		auto &&CreateCacheBlock = [&]() -> bool {
@@ -1714,11 +1716,15 @@ protected:
 
 	[[nodiscard]] bool GetStagingBuffer(SMemoryBlock<s_StagingBufferCacheId> &ResBlock, const void *pBufferData, VkDeviceSize RequiredSize)
 	{
+		ZoneScoped;
+
 		return GetBufferBlockImpl<s_StagingBufferCacheId, 8 * 1024 * 1024, 3, true>(ResBlock, m_StagingBufferCache, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT, pBufferData, RequiredSize, maximum<VkDeviceSize>(m_NonCoherentMemAlignment, 16));
 	}
 
 	[[nodiscard]] bool GetStagingBufferImage(SMemoryBlock<s_StagingBufferImageCacheId> &ResBlock, const void *pBufferData, VkDeviceSize RequiredSize)
 	{
+		ZoneScoped;
+
 		return GetBufferBlockImpl<s_StagingBufferImageCacheId, 8 * 1024 * 1024, 3, true>(ResBlock, m_StagingBufferCacheImage, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT, pBufferData, RequiredSize, maximum<VkDeviceSize>(m_OptimalImageCopyMemAlignment, maximum<VkDeviceSize>(m_NonCoherentMemAlignment, 16)));
 	}
 
@@ -2583,6 +2589,8 @@ protected:
 		int Flags,
 		uint8_t *&pData)
 	{
+		ZoneScoped;
+
 		size_t ImageIndex = (size_t)Slot;
 		const size_t PixelSize = VulkanFormatToPixelSize(Format);
 
@@ -2788,6 +2796,8 @@ protected:
 
 	[[nodiscard]] bool CreateTextureImage(size_t ImageIndex, VkImage &NewImage, SMemoryImageBlock<s_ImageBufferCacheId> &NewImgMem, const uint8_t *pData, VkFormat Format, size_t Width, size_t Height, size_t Depth, size_t PixelSize, size_t MipMapLevelCount)
 	{
+		ZoneScoped;
+
 		VkDeviceSize ImageSize = Width * Height * Depth * PixelSize;
 
 		SMemoryBlock<s_StagingBufferImageCacheId> StagingBuffer;
@@ -6539,6 +6549,8 @@ public:
 
 	[[nodiscard]] bool Cmd_Init(const SCommand_Init *pCommand)
 	{
+		ZoneScoped;
+
 		pCommand->m_pCapabilities->m_TileBuffering = true;
 		pCommand->m_pCapabilities->m_QuadBuffering = true;
 		pCommand->m_pCapabilities->m_TextBuffering = true;
@@ -6625,6 +6637,8 @@ public:
 
 	[[nodiscard]] bool Cmd_Shutdown(const SCommand_Shutdown *pCommand)
 	{
+		ZoneScoped;
+
 		vkDeviceWaitIdle(m_VKDevice);
 
 		DestroyIndexBuffer(m_IndexBuffer, m_IndexBufferMemory);
@@ -6637,6 +6651,8 @@ public:
 
 	[[nodiscard]] bool Cmd_Texture_Destroy(const CCommandBuffer::SCommand_Texture_Destroy *pCommand)
 	{
+		ZoneScoped;
+
 		size_t ImageIndex = (size_t)pCommand->m_Slot;
 		auto &Texture = m_vTextures[ImageIndex];
 
@@ -6649,6 +6665,8 @@ public:
 
 	[[nodiscard]] bool Cmd_Texture_Create(const CCommandBuffer::SCommand_Texture_Create *pCommand)
 	{
+		ZoneScoped;
+
 		int Slot = pCommand->m_Slot;
 		int Width = pCommand->m_Width;
 		int Height = pCommand->m_Height;
@@ -6665,6 +6683,8 @@ public:
 
 	[[nodiscard]] bool Cmd_TextTextures_Create(const CCommandBuffer::SCommand_TextTextures_Create *pCommand)
 	{
+		ZoneScoped;
+
 		int Slot = pCommand->m_Slot;
 		int SlotOutline = pCommand->m_SlotOutline;
 		int Width = pCommand->m_Width;
@@ -6689,6 +6709,8 @@ public:
 
 	[[nodiscard]] bool Cmd_TextTextures_Destroy(const CCommandBuffer::SCommand_TextTextures_Destroy *pCommand)
 	{
+		ZoneScoped;
+
 		size_t ImageIndex = (size_t)pCommand->m_Slot;
 		size_t ImageIndexOutline = (size_t)pCommand->m_SlotOutline;
 		auto &Texture = m_vTextures[ImageIndex];
@@ -6704,6 +6726,8 @@ public:
 
 	[[nodiscard]] bool Cmd_TextTexture_Update(const CCommandBuffer::SCommand_TextTexture_Update *pCommand)
 	{
+		ZoneScoped;
+
 		size_t IndexTex = pCommand->m_Slot;
 		uint8_t *pData = pCommand->m_pData;
 
@@ -6717,6 +6741,8 @@ public:
 
 	void Cmd_Clear_FillExecuteBuffer(SRenderCommandExecuteBuffer &ExecBuffer, const CCommandBuffer::SCommand_Clear *pCommand)
 	{
+		ZoneScoped;
+
 		if(!pCommand->m_ForceClear)
 		{
 			bool ColorChanged = m_aClearColor[0] != pCommand->m_Color.r || m_aClearColor[1] != pCommand->m_Color.g ||
@@ -6737,6 +6763,8 @@ public:
 
 	[[nodiscard]] bool Cmd_Clear(const SRenderCommandExecuteBuffer &ExecBuffer, const CCommandBuffer::SCommand_Clear *pCommand)
 	{
+		ZoneScoped;
+
 		if(ExecBuffer.m_ClearColorInRenderThread)
 		{
 			std::array<VkClearAttachment, 1> aAttachments = {VkClearAttachment{VK_IMAGE_ASPECT_COLOR_BIT, 0, VkClearValue{VkClearColorValue{{pCommand->m_Color.r, pCommand->m_Color.g, pCommand->m_Color.b, pCommand->m_Color.a}}}}};
@@ -6754,6 +6782,8 @@ public:
 
 	void Cmd_Render_FillExecuteBuffer(SRenderCommandExecuteBuffer &ExecBuffer, const CCommandBuffer::SCommand_Render *pCommand)
 	{
+		ZoneScoped;
+
 		bool IsTextured = GetIsTextured(pCommand->m_State);
 		if(IsTextured)
 		{
@@ -6770,11 +6800,15 @@ public:
 
 	[[nodiscard]] bool Cmd_Render(const CCommandBuffer::SCommand_Render *pCommand, SRenderCommandExecuteBuffer &ExecBuffer)
 	{
+		ZoneScoped;
+
 		return RenderStandard<CCommandBuffer::SVertex, false>(ExecBuffer, pCommand->m_State, pCommand->m_PrimType, pCommand->m_pVertices, pCommand->m_PrimCount);
 	}
 
 	[[nodiscard]] bool Cmd_ReadPixel(const CCommandBuffer::SCommand_TrySwapAndReadPixel *pCommand)
 	{
+		ZoneScoped;
+
 		if(!*pCommand->m_pSwapped && !NextFrame())
 			return false;
 		*pCommand->m_pSwapped = true;
@@ -6796,6 +6830,8 @@ public:
 
 	[[nodiscard]] bool Cmd_Screenshot(const CCommandBuffer::SCommand_TrySwapAndScreenshot *pCommand)
 	{
+		ZoneScoped;
+
 		if(!*pCommand->m_pSwapped && !NextFrame())
 			return false;
 		*pCommand->m_pSwapped = true;
@@ -6822,6 +6858,8 @@ public:
 
 	void Cmd_RenderTex3D_FillExecuteBuffer(SRenderCommandExecuteBuffer &ExecBuffer, const CCommandBuffer::SCommand_RenderTex3D *pCommand)
 	{
+		ZoneScoped;
+
 		bool IsTextured = GetIsTextured(pCommand->m_State);
 		if(IsTextured)
 		{
@@ -6837,16 +6875,22 @@ public:
 
 	[[nodiscard]] bool Cmd_RenderTex3D(const CCommandBuffer::SCommand_RenderTex3D *pCommand, SRenderCommandExecuteBuffer &ExecBuffer)
 	{
+		ZoneScoped;
+
 		return RenderStandard<CCommandBuffer::SVertexTex3DStream, true>(ExecBuffer, pCommand->m_State, pCommand->m_PrimType, pCommand->m_pVertices, pCommand->m_PrimCount);
 	}
 
 	void Cmd_Update_Viewport_FillExecuteBuffer(SRenderCommandExecuteBuffer &ExecBuffer, const CCommandBuffer::SCommand_Update_Viewport *pCommand)
 	{
+		ZoneScoped;
+
 		ExecBuffer.m_EstimatedRenderCallCount = 0;
 	}
 
 	[[nodiscard]] bool Cmd_Update_Viewport(const CCommandBuffer::SCommand_Update_Viewport *pCommand)
 	{
+		ZoneScoped;
+
 		if(pCommand->m_ByResize)
 		{
 			if(IsVerbose())
@@ -6881,6 +6925,8 @@ public:
 
 	[[nodiscard]] bool Cmd_VSync(const CCommandBuffer::SCommand_VSync *pCommand)
 	{
+		ZoneScoped;
+
 		if(IsVerbose())
 		{
 			dbg_msg("vulkan", "queueing swap chain recreation because vsync was changed");
@@ -6893,6 +6939,8 @@ public:
 
 	[[nodiscard]] bool Cmd_MultiSampling(const CCommandBuffer::SCommand_MultiSampling *pCommand)
 	{
+		ZoneScoped;
+
 		if(IsVerbose())
 		{
 			dbg_msg("vulkan", "queueing swap chain recreation because multi sampling was changed");
@@ -6910,11 +6958,15 @@ public:
 
 	[[nodiscard]] bool Cmd_Swap(const CCommandBuffer::SCommand_Swap *pCommand)
 	{
+		ZoneScoped;
+
 		return NextFrame();
 	}
 
 	[[nodiscard]] bool Cmd_CreateBufferObject(const CCommandBuffer::SCommand_CreateBufferObject *pCommand)
 	{
+		ZoneScoped;
+
 		bool IsOneFrameBuffer = (pCommand->m_Flags & IGraphics::EBufferObjectCreateFlags::BUFFER_OBJECT_CREATE_FLAGS_ONE_TIME_USE_BIT) != 0;
 		if(!CreateBufferObject((size_t)pCommand->m_BufferIndex, pCommand->m_pUploadData, (VkDeviceSize)pCommand->m_DataSize, IsOneFrameBuffer))
 			return false;
@@ -6926,6 +6978,8 @@ public:
 
 	[[nodiscard]] bool Cmd_UpdateBufferObject(const CCommandBuffer::SCommand_UpdateBufferObject *pCommand)
 	{
+		ZoneScoped;
+
 		size_t BufferIndex = (size_t)pCommand->m_BufferIndex;
 		bool DeletePointer = pCommand->m_DeletePointer;
 		VkDeviceSize Offset = (VkDeviceSize)((intptr_t)pCommand->m_pOffset);
@@ -6955,6 +7009,8 @@ public:
 
 	[[nodiscard]] bool Cmd_RecreateBufferObject(const CCommandBuffer::SCommand_RecreateBufferObject *pCommand)
 	{
+		ZoneScoped;
+
 		DeleteBufferObject((size_t)pCommand->m_BufferIndex);
 		bool IsOneFrameBuffer = (pCommand->m_Flags & IGraphics::EBufferObjectCreateFlags::BUFFER_OBJECT_CREATE_FLAGS_ONE_TIME_USE_BIT) != 0;
 		return CreateBufferObject((size_t)pCommand->m_BufferIndex, pCommand->m_pUploadData, (VkDeviceSize)pCommand->m_DataSize, IsOneFrameBuffer);
@@ -6962,6 +7018,8 @@ public:
 
 	[[nodiscard]] bool Cmd_CopyBufferObject(const CCommandBuffer::SCommand_CopyBufferObject *pCommand)
 	{
+		ZoneScoped;
+
 		size_t ReadBufferIndex = (size_t)pCommand->m_ReadBufferIndex;
 		size_t WriteBufferIndex = (size_t)pCommand->m_WriteBufferIndex;
 		auto &ReadMemBlock = m_vBufferObjects[ReadBufferIndex].m_BufferObject.m_Mem;
@@ -6989,6 +7047,8 @@ public:
 
 	[[nodiscard]] bool Cmd_DeleteBufferObject(const CCommandBuffer::SCommand_DeleteBufferObject *pCommand)
 	{
+		ZoneScoped;
+
 		size_t BufferIndex = (size_t)pCommand->m_BufferIndex;
 		DeleteBufferObject(BufferIndex);
 
@@ -6997,6 +7057,8 @@ public:
 
 	[[nodiscard]] bool Cmd_CreateBufferContainer(const CCommandBuffer::SCommand_CreateBufferContainer *pCommand)
 	{
+		ZoneScoped;
+
 		size_t ContainerIndex = (size_t)pCommand->m_BufferContainerIndex;
 		while(ContainerIndex >= m_vBufferContainers.size())
 			m_vBufferContainers.resize((m_vBufferContainers.size() * 2) + 1);
@@ -7008,6 +7070,8 @@ public:
 
 	[[nodiscard]] bool Cmd_UpdateBufferContainer(const CCommandBuffer::SCommand_UpdateBufferContainer *pCommand)
 	{
+		ZoneScoped;
+
 		size_t ContainerIndex = (size_t)pCommand->m_BufferContainerIndex;
 		m_vBufferContainers[ContainerIndex].m_BufferObjectIndex = pCommand->m_VertBufferBindingIndex;
 
@@ -7016,6 +7080,8 @@ public:
 
 	[[nodiscard]] bool Cmd_DeleteBufferContainer(const CCommandBuffer::SCommand_DeleteBufferContainer *pCommand)
 	{
+		ZoneScoped;
+
 		size_t ContainerIndex = (size_t)pCommand->m_BufferContainerIndex;
 		bool DeleteAllBO = pCommand->m_DestroyAllBO;
 		if(DeleteAllBO)
@@ -7029,6 +7095,8 @@ public:
 
 	[[nodiscard]] bool Cmd_IndicesRequiredNumNotify(const CCommandBuffer::SCommand_IndicesRequiredNumNotify *pCommand)
 	{
+		ZoneScoped;
+
 		size_t IndicesCount = pCommand->m_RequiredIndicesNum;
 		if(m_CurRenderIndexPrimitiveCount < IndicesCount / 6)
 		{
@@ -7055,11 +7123,15 @@ public:
 
 	void Cmd_RenderTileLayer_FillExecuteBuffer(SRenderCommandExecuteBuffer &ExecBuffer, const CCommandBuffer::SCommand_RenderTileLayer *pCommand)
 	{
+		ZoneScoped;
+
 		RenderTileLayer_FillExecuteBuffer(ExecBuffer, pCommand->m_IndicesDrawNum, pCommand->m_State, pCommand->m_BufferContainerIndex);
 	}
 
 	[[nodiscard]] bool Cmd_RenderTileLayer(const CCommandBuffer::SCommand_RenderTileLayer *pCommand, SRenderCommandExecuteBuffer &ExecBuffer)
 	{
+		ZoneScoped;
+
 		vec2 Scale{};
 		vec2 Off{};
 		return RenderTileLayer(ExecBuffer, pCommand->m_State, false, pCommand->m_Color, Scale, Off, (size_t)pCommand->m_IndicesDrawNum, pCommand->m_pIndicesOffsets, pCommand->m_pDrawCount);
@@ -7067,11 +7139,15 @@ public:
 
 	void Cmd_RenderBorderTile_FillExecuteBuffer(SRenderCommandExecuteBuffer &ExecBuffer, const CCommandBuffer::SCommand_RenderBorderTile *pCommand)
 	{
+		ZoneScoped;
+
 		RenderTileLayer_FillExecuteBuffer(ExecBuffer, 1, pCommand->m_State, pCommand->m_BufferContainerIndex);
 	}
 
 	[[nodiscard]] bool Cmd_RenderBorderTile(const CCommandBuffer::SCommand_RenderBorderTile *pCommand, SRenderCommandExecuteBuffer &ExecBuffer)
 	{
+		ZoneScoped;
+
 		vec2 Scale = pCommand->m_Scale;
 		vec2 Off = pCommand->m_Offset;
 		unsigned int DrawNum = pCommand->m_DrawNum * 6;
@@ -7080,6 +7156,8 @@ public:
 
 	void Cmd_RenderQuadLayer_FillExecuteBuffer(SRenderCommandExecuteBuffer &ExecBuffer, const CCommandBuffer::SCommand_RenderQuadLayer *pCommand)
 	{
+		ZoneScoped;
+
 		size_t BufferContainerIndex = (size_t)pCommand->m_BufferContainerIndex;
 		size_t BufferObjectIndex = (size_t)m_vBufferContainers[BufferContainerIndex].m_BufferObjectIndex;
 		const auto &BufferObject = m_vBufferObjects[BufferObjectIndex];
@@ -7103,6 +7181,8 @@ public:
 
 	[[nodiscard]] bool Cmd_RenderQuadLayer(const CCommandBuffer::SCommand_RenderQuadLayer *pCommand, SRenderCommandExecuteBuffer &ExecBuffer)
 	{
+		ZoneScoped;
+
 		std::array<float, (size_t)4 * 2> m;
 		GetStateMatrix(pCommand->m_State, m);
 
@@ -7188,6 +7268,8 @@ public:
 
 	void Cmd_RenderText_FillExecuteBuffer(SRenderCommandExecuteBuffer &ExecBuffer, const CCommandBuffer::SCommand_RenderText *pCommand)
 	{
+		ZoneScoped;
+
 		size_t BufferContainerIndex = (size_t)pCommand->m_BufferContainerIndex;
 		size_t BufferObjectIndex = (size_t)m_vBufferContainers[BufferContainerIndex].m_BufferObjectIndex;
 		const auto &BufferObject = m_vBufferObjects[BufferObjectIndex];
@@ -7206,6 +7288,8 @@ public:
 
 	[[nodiscard]] bool Cmd_RenderText(const CCommandBuffer::SCommand_RenderText *pCommand, SRenderCommandExecuteBuffer &ExecBuffer)
 	{
+		ZoneScoped;
+
 		std::array<float, (size_t)4 * 2> m;
 		GetStateMatrix(pCommand->m_State, m);
 
@@ -7252,6 +7336,8 @@ public:
 
 	void BufferContainer_FillExecuteBuffer(SRenderCommandExecuteBuffer &ExecBuffer, const CCommandBuffer::SState &State, size_t BufferContainerIndex, size_t DrawCalls)
 	{
+		ZoneScoped;
+
 		size_t BufferObjectIndex = (size_t)m_vBufferContainers[BufferContainerIndex].m_BufferObjectIndex;
 		const auto &BufferObject = m_vBufferObjects[BufferObjectIndex];
 
@@ -7274,11 +7360,15 @@ public:
 
 	void Cmd_RenderQuadContainer_FillExecuteBuffer(SRenderCommandExecuteBuffer &ExecBuffer, const CCommandBuffer::SCommand_RenderQuadContainer *pCommand)
 	{
+		ZoneScoped;
+
 		BufferContainer_FillExecuteBuffer(ExecBuffer, pCommand->m_State, (size_t)pCommand->m_BufferContainerIndex, 1);
 	}
 
 	[[nodiscard]] bool Cmd_RenderQuadContainer(const CCommandBuffer::SCommand_RenderQuadContainer *pCommand, SRenderCommandExecuteBuffer &ExecBuffer)
 	{
+		ZoneScoped;
+
 		std::array<float, (size_t)4 * 2> m;
 		GetStateMatrix(pCommand->m_State, m);
 
@@ -7319,11 +7409,15 @@ public:
 
 	void Cmd_RenderQuadContainerEx_FillExecuteBuffer(SRenderCommandExecuteBuffer &ExecBuffer, const CCommandBuffer::SCommand_RenderQuadContainerEx *pCommand)
 	{
+		ZoneScoped;
+
 		BufferContainer_FillExecuteBuffer(ExecBuffer, pCommand->m_State, (size_t)pCommand->m_BufferContainerIndex, 1);
 	}
 
 	[[nodiscard]] bool Cmd_RenderQuadContainerEx(const CCommandBuffer::SCommand_RenderQuadContainerEx *pCommand, SRenderCommandExecuteBuffer &ExecBuffer)
 	{
+		ZoneScoped;
+
 		std::array<float, (size_t)4 * 2> m;
 		GetStateMatrix(pCommand->m_State, m);
 
@@ -7383,11 +7477,15 @@ public:
 
 	void Cmd_RenderQuadContainerAsSpriteMultiple_FillExecuteBuffer(SRenderCommandExecuteBuffer &ExecBuffer, const CCommandBuffer::SCommand_RenderQuadContainerAsSpriteMultiple *pCommand)
 	{
+		ZoneScoped;
+
 		BufferContainer_FillExecuteBuffer(ExecBuffer, pCommand->m_State, (size_t)pCommand->m_BufferContainerIndex, ((pCommand->m_DrawCount - 1) / gs_GraphicsMaxParticlesRenderCount) + 1);
 	}
 
 	[[nodiscard]] bool Cmd_RenderQuadContainerAsSpriteMultiple(const CCommandBuffer::SCommand_RenderQuadContainerAsSpriteMultiple *pCommand, SRenderCommandExecuteBuffer &ExecBuffer)
 	{
+		ZoneScoped;
+
 		std::array<float, (size_t)4 * 2> m;
 		GetStateMatrix(pCommand->m_State, m);
 
@@ -7476,6 +7574,8 @@ public:
 
 	[[nodiscard]] bool Cmd_WindowCreateNtf(const CCommandBuffer::SCommand_WindowCreateNtf *pCommand)
 	{
+		ZoneScoped;
+
 		log_debug("vulkan", "creating new surface.");
 		m_pWindow = SDL_GetWindowFromID(pCommand->m_WindowId);
 		if(m_RenderingPaused)
@@ -7497,6 +7597,8 @@ public:
 
 	[[nodiscard]] bool Cmd_WindowDestroyNtf(const CCommandBuffer::SCommand_WindowDestroyNtf *pCommand)
 	{
+		ZoneScoped;
+
 		log_debug("vulkan", "surface got destroyed.");
 		if(!m_RenderingPaused)
 		{
@@ -7514,6 +7616,8 @@ public:
 
 	[[nodiscard]] bool Cmd_PreInit(const CCommandProcessorFragment_GLBase::SCommand_PreInit *pCommand)
 	{
+		ZoneScoped;
+
 		m_pGpuList = pCommand->m_pGpuList;
 		if(InitVulkanSDL(pCommand->m_pWindow, pCommand->m_Width, pCommand->m_Height, pCommand->m_pRendererString, pCommand->m_pVendorString, pCommand->m_pVersionString) != 0)
 		{
@@ -7557,6 +7661,8 @@ public:
 
 	[[nodiscard]] bool Cmd_PostShutdown(const CCommandProcessorFragment_GLBase::SCommand_PostShutdown *pCommand)
 	{
+		ZoneScoped;
+
 		for(size_t i = 0; i < m_ThreadCount - 1; ++i)
 		{
 			auto *pThread = m_vpRenderThreads[i].get();
@@ -7580,6 +7686,8 @@ public:
 
 	void StartCommands(size_t CommandCount, size_t EstimatedRenderCallCount) override
 	{
+		ZoneScoped;
+
 		m_CommandsInPipe = CommandCount;
 		m_RenderCallsInPipe = EstimatedRenderCallCount;
 		m_CurCommandInPipe = 0;
@@ -7588,6 +7696,8 @@ public:
 
 	void EndCommands() override
 	{
+		ZoneScoped;
+
 		FinishRenderThreads();
 		m_CommandsInPipe = 0;
 		m_RenderCallsInPipe = 0;
@@ -7599,6 +7709,8 @@ public:
 
 	void RunThread(size_t ThreadIndex)
 	{
+		ZoneScoped;
+
 		auto *pThread = m_vpRenderThreads[ThreadIndex].get();
 		std::unique_lock<std::mutex> Lock(pThread->m_Mutex);
 		pThread->m_Started = true;
